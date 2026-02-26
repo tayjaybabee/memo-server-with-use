@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { MagnifyingGlass, User } from '@phosphor-icons/react'
@@ -6,19 +5,11 @@ import { MagnifyingGlass, User } from '@phosphor-icons/react'
 interface HeaderProps {
   searchQuery: string
   onSearchChange: (query: string) => void
+  userLogin: string
+  avatarUrl: string
 }
 
-export function Header({ searchQuery, onSearchChange }: HeaderProps) {
-  const [user, setUser] = useState<{ login: string; avatarUrl: string } | null>(null)
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const userData = await spark.user()
-      setUser(userData)
-    }
-    fetchUser()
-  }, [])
-
+export function Header({ searchQuery, onSearchChange, userLogin, avatarUrl }: HeaderProps) {
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
@@ -31,9 +22,9 @@ export function Header({ searchQuery, onSearchChange }: HeaderProps) {
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Memo Server
               </h1>
-              {user && (
+              {userLogin && (
                 <p className="text-sm text-muted-foreground">
-                  Welcome, {user.login}
+                  Welcome, {userLogin}
                 </p>
               )}
             </div>
@@ -54,9 +45,9 @@ export function Header({ searchQuery, onSearchChange }: HeaderProps) {
               />
             </div>
             
-            {user && (
+            {userLogin && (
               <Avatar className="hidden sm:block border-2 border-primary/20">
-                <AvatarImage src={user.avatarUrl} alt={user.login} />
+                <AvatarImage src={avatarUrl} alt={userLogin} />
                 <AvatarFallback>
                   <User weight="fill" />
                 </AvatarFallback>

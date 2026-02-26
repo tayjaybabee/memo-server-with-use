@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Header } from '@/components/Header'
 import { MemoCard } from '@/components/MemoCard'
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Plus, Note, Gear } from '@phosphor-icons/react'
 import { toast, Toaster } from 'sonner'
+import { v4 as uuidv4 } from 'uuid'
 import type { Memo, MemoFormData } from '@/types/memo'
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [userId, setUserId] = useState<string>('')
   const [userLogin, setUserLogin] = useState<string>('')
+  const [avatarUrl, setAvatarUrl] = useState<string>('')
   const [isOwner, setIsOwner] = useState(false)
   const [activeTab, setActiveTab] = useState('memos')
 
@@ -34,6 +36,7 @@ function App() {
       const user = await spark.user()
       setUserId(user.id)
       setUserLogin(user.login)
+      setAvatarUrl(user.avatarUrl)
       setIsOwner(user.isOwner)
     }
     fetchUserId()
@@ -48,22 +51,83 @@ function App() {
 
   const filteredMemos = useMemo(() => {
     if (!memos) return []
-    
-    const accessibleMemos = memos.filter(memo => {
-      if (memo.userId === userId) return true
-      if (memo.sharedWith && memo.sharedWith.includes(userLogin)) return true
-      return false
+
+    const query = searchQuery.trim().toLowerCase()
+    return memos.filter(memo => {
+      if (memo.userId !== userId && !(memo.sharedWith && memo.sharedWith.includes(userLogin))) return false
+      if (!query) return true
+      return memo.title.toLowerCase().includes(query) || memo.content.toLowerCase().includes(query)
     })
-
-    if (!searchQuery.trim()) return accessibleMemos
-
-    const query = searchQuery.toLowerCase()
-    return accessibleMemos.filter(
-      memo =>
-        memo.title.toLowerCase().includes(query) ||
-        memo.content.toLowerCase().includes(query)
-    )
   }, [memos, searchQuery, userId, userLogin])
+
+  const handleCreateMemo = useCallback(() => {
+    setEditingMemo(null)
+    setDialogOpen(true)
+  }, [])
+
+  const handleEditMemo = useCallback((memo: Memo) => {
+    setEditingMemo(memo)
+    setDialogOpen(true)
+  }, [])
+
+  const handleSaveMemo = useCallback((data: MemoFormData) => {
+    if (editingMemo) {
+      setMemos((currentMemos) =>
+        (currentMemos || []).map(memo =>
+          memo.id === editingMemo.id
+            ? { ...memo, ...data, updatedAt: Date.now() }
+            : memo
+        )
+      )
+      toast.success('Memo updated successfully')
+    } else {
+      const newMemo: Memo = {
+        id: uuidv4(),
+        ...data,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        userId
+      }
+      setMemos((currentMemos) => [newMemo, ...(currentMemos || [])])
+      toast.success('Memo created successfully')
+    }
+    setDialogOpen(false)
+    setEditingMemo(null)
+  }, [editingMemo, userId, setMemos])
+
+  const handleDeleteClick = useCallback((id: string) => {
+    setMemoToDelete(id)
+    setDeleteDialogOpen(true)
+  }, [])
+
+  const handleConfirmDelete = useCallback(() => {
+    if (memoToDelete) {
+      setMemos((currentMemos) => (currentMemos || []).filter(memo => memo.id !== memoToDelete))
+      toast.success('Memo deleted successfully')
+      setMemoToDelete(null)
+      setDeleteDialogOpen(false)
+    }
+  }, [memoToDelete, setMemos])
+
+  const handleShareClick = useCallback((memo: Memo) => {
+    setMemoToShare(memo)
+    setShareDialogOpen(true)
+  }, [])
+
+  const handleShareMemo = useCallback((memoId: string, sharedWith: string[]) => {
+    setMemos((currentMemos) =>
+      (currentMemos || []).map(memo =>
+        memo.id === memoId
+          ? { ...memo, sharedWith, updatedAt: Date.now() }
+          : memo
+      )
+    )
+    toast.success('Memo sharing updated successfully')
+  }, [setMemos])
+
+  const handleUpdateWhitelist = useCallback((newWhitelist: string[]) => {
+    setWhitelist(newWhitelist)
+  }, [setWhitelist])
 
   if (!userLogin) {
     return (
@@ -77,80 +141,11 @@ function App() {
     return <AccessDenied username={userLogin} />
   }
 
-  const handleCreateMemo = () => {
-    setEditingMemo(null)
-    setDialogOpen(true)
-  }
-
-  const handleEditMemo = (memo: Memo) => {
-    setEditingMemo(memo)
-    setDialogOpen(true)
-  }
-
-  const handleSaveMemo = (data: MemoFormData) => {
-    if (editingMemo) {
-      setMemos((currentMemos) =>
-        (currentMemos || []).map(memo =>
-          memo.id === editingMemo.id
-            ? { ...memo, ...data, updatedAt: Date.now() }
-            : memo
-        )
-      )
-      toast.success('Memo updated successfully')
-    } else {
-      const newMemo: Memo = {
-        id: `memo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        ...data,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        userId
-      }
-      setMemos((currentMemos) => [newMemo, ...(currentMemos || [])])
-      toast.success('Memo created successfully')
-    }
-    setDialogOpen(false)
-    setEditingMemo(null)
-  }
-
-  const handleDeleteClick = (id: string) => {
-    setMemoToDelete(id)
-    setDeleteDialogOpen(true)
-  }
-
-  const handleConfirmDelete = () => {
-    if (memoToDelete) {
-      setMemos((currentMemos) => (currentMemos || []).filter(memo => memo.id !== memoToDelete))
-      toast.success('Memo deleted successfully')
-      setMemoToDelete(null)
-      setDeleteDialogOpen(false)
-    }
-  }
-
-  const handleShareClick = (memo: Memo) => {
-    setMemoToShare(memo)
-    setShareDialogOpen(true)
-  }
-
-  const handleShareMemo = (memoId: string, sharedWith: string[]) => {
-    setMemos((currentMemos) =>
-      (currentMemos || []).map(memo =>
-        memo.id === memoId
-          ? { ...memo, sharedWith, updatedAt: Date.now() }
-          : memo
-      )
-    )
-    toast.success('Memo sharing updated successfully')
-  }
-
-  const handleUpdateWhitelist = (newWhitelist: string[]) => {
-    setWhitelist(newWhitelist)
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="bottom-right" richColors />
       
-      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} userLogin={userLogin} avatarUrl={avatarUrl} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {isOwner ? (

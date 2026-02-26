@@ -37,7 +37,7 @@ export function WhitelistSettings({ whitelist, onUpdateWhitelist }: WhitelistSet
     toast.success(`Removed ${username} from whitelist`)
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleAddUsername()
     }
@@ -67,7 +67,7 @@ export function WhitelistSettings({ whitelist, onUpdateWhitelist }: WhitelistSet
             placeholder="Enter GitHub username"
             value={newUsername}
             onChange={(e) => setNewUsername(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             className="flex-1"
           />
           <Button onClick={handleAddUsername} className="bg-accent hover:bg-accent/90">
