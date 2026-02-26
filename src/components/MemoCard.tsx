@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { Memo } from '@/types/memo'
 import { motion } from 'framer-motion'
+import { marked } from 'marked'
+import { useMemo } from 'react'
 
 interface MemoCardProps {
   memo: Memo
@@ -27,6 +29,20 @@ export function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardP
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
   }
+
+  const renderPreview = useMemo(() => {
+    if (!memo.content) return 'No content'
+    
+    try {
+      const html = marked(memo.content, { breaks: true, gfm: true }) as string
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = html
+      const text = tempDiv.textContent || tempDiv.innerText || ''
+      return text.slice(0, 200)
+    } catch (e) {
+      return memo.content.slice(0, 200)
+    }
+  }, [memo.content])
 
   return (
     <motion.div
@@ -72,7 +88,7 @@ export function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardP
         </div>
         
         <p className="text-sm text-muted-foreground line-clamp-4 flex-1">
-          {memo.content || 'No content'}
+          {renderPreview}
         </p>
         
         <div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">

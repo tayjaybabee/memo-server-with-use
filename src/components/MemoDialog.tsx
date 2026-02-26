@@ -1,10 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/RichTextEditor'
 import type { Memo, MemoFormData } from '@/types/memo'
 
 interface MemoDialogProps {
@@ -15,12 +15,14 @@ interface MemoDialogProps {
 }
 
 export function MemoDialog({ open, onOpenChange, onSave, editingMemo }: MemoDialogProps) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<MemoFormData>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<MemoFormData>({
     defaultValues: {
       title: '',
       content: ''
     }
   })
+  
+  const [content, setContent] = useState('')
 
   useEffect(() => {
     if (editingMemo) {
@@ -28,17 +30,25 @@ export function MemoDialog({ open, onOpenChange, onSave, editingMemo }: MemoDial
         title: editingMemo.title,
         content: editingMemo.content
       })
+      setContent(editingMemo.content)
     } else {
       reset({
         title: '',
         content: ''
       })
+      setContent('')
     }
   }, [editingMemo, reset])
 
+  const handleContentChange = (value: string) => {
+    setContent(value)
+    setValue('content', value)
+  }
+
   const onSubmit = (data: MemoFormData) => {
-    onSave(data)
+    onSave({ ...data, content })
     reset()
+    setContent('')
   }
 
   return (
@@ -69,12 +79,10 @@ export function MemoDialog({ open, onOpenChange, onSave, editingMemo }: MemoDial
           
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
-            <Textarea
-              id="content"
-              placeholder="Write your memo content..."
-              rows={10}
-              {...register('content')}
-              className="resize-none"
+            <RichTextEditor
+              value={content}
+              onChange={handleContentChange}
+              placeholder="Write your memo content with rich formatting..."
             />
           </div>
           
