@@ -19,6 +19,13 @@ This is a memo management system with user authentication, CRUD operations, and 
 - **Progression**: App loads → Fetch user info → Display avatar and username in header
 - **Success criteria**: User sees their GitHub avatar and login name prominently displayed
 
+### Access Control & Whitelist
+- **Functionality**: Owner can whitelist specific GitHub usernames to control who can access the memo server
+- **Purpose**: Restrict access to trusted users while maintaining GitHub-based authentication
+- **Trigger**: Owner navigates to Settings tab
+- **Progression**: Owner clicks Settings → Views whitelist → Adds GitHub username → User is granted access → Non-whitelisted users see access denied screen
+- **Success criteria**: Only whitelisted users (plus owner) can view and create memos; non-whitelisted users see a clear access denied message
+
 ### Memo Creation
 - **Functionality**: Create new text-based memos with title and content
 - **Purpose**: Capture thoughts, reminders, and notes quickly
@@ -60,6 +67,9 @@ This is a memo management system with user authentication, CRUD operations, and 
 - **Rapid Creation**: Debounce save operations to prevent duplicate memo creation
 - **No Results**: Show "No memos found" message when search returns empty
 - **Invalid Input**: Require title field, show inline validation for empty submissions
+- **Access Denied**: Non-whitelisted users see a clear, friendly access denied screen with owner contact suggestion
+- **Empty Whitelist**: When no users are whitelisted, anyone can access the memo server (open access mode)
+- **Owner Always Has Access**: App owner bypasses whitelist restrictions and can always access all features
 
 ## Design Direction
 The design should evoke a sense of modern productivity - clean, focused, and slightly playful. It should feel like a premium note-taking tool with personality, not a sterile database interface. The aesthetic should be warm and inviting while maintaining professional clarity.
@@ -105,12 +115,13 @@ Animations should feel responsive and snappy while adding moments of delight dur
   - **Dialog**: Create and edit memo forms in modal overlay
   - **Card**: Memo display with hover states and action buttons
   - **Button**: Primary actions (New Memo), secondary actions (Cancel), and icon buttons (Edit, Delete)
-  - **Input**: Title field in memo forms, search field in header
+  - **Input**: Title field in memo forms, search field in header, username input in whitelist settings
   - **Textarea**: Multi-line content field in memo forms
   - **Avatar**: Display user GitHub avatar in header
   - **Alert Dialog**: Confirmation prompt for memo deletion
-  - **Badge**: Display memo count and categories if implemented
+  - **Badge**: Display memo count and whitelist user count
   - **ScrollArea**: Smooth scrolling for memo grid on overflow
+  - **Tabs**: Switch between Memos view and Settings view (owner only)
 
 - **Customizations**:
   - Custom memo card component with gradient backgrounds and subtle shadows
@@ -131,6 +142,10 @@ Animations should feel responsive and snappy while adding moments of delight dur
   - Search: MagnifyingGlass (inline with search input)
   - User: User or UserCircle (fallback if no avatar)
   - Empty State: Note or NotePencil (large, muted)
+  - Settings: Gear (tab navigation)
+  - Memos Tab: Note (tab navigation)
+  - Access Denied: Lock (large, duotone weight)
+  - Whitelist: UserPlus (settings section header)
 
 - **Spacing**:
   - Container padding: px-6 py-8

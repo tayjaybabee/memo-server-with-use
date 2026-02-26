@@ -4,28 +4,47 @@ import { Header } from '@/components/Header'
 import { MemoCard } from '@/components/MemoCard'
 import { MemoDialog } from '@/components/MemoDialog'
 import { EmptyState } from '@/components/EmptyState'
+import { AccessDenied } from '@/components/AccessDenied'
+import { WhitelistSettings } from '@/components/WhitelistSettings'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Plus } from '@phosphor-icons/react'
+import { Plus, Note, Gear } from '@phosphor-icons/react'
 import { toast, Toaster } from 'sonner'
 import type { Memo, MemoFormData } from '@/types/memo'
 
 function App() {
   const [memos, setMemos] = useKV<Memo[]>('memos', [])
+  const [whitelist, setWhitelist] = useKV<string[]>('whitelist', [])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingMemo, setEditingMemo] = useState<Memo | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [memoToDelete, setMemoToDelete] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [userId, setUserId] = useState<string>('')
+  const [userLogin, setUserLogin] = useState<string>('')
+  const [isOwner, setIsOwner] = useState(false)
+  const [activeTab, setActiveTab] = useState('memos')
 
   useEffect(() => {
     const fetchUserId = async () => {
       const user = await spark.user()
       setUserId(user.id)
+      setUserLogin(user.login)
+      setIsOwner(user.isOwner)
     }
     fetchUserId()
   }, [])
+
+  const hasAccess = useMemo(() => {
+    if (isOwner) return true
+    if (!whitelist || whitelist.length === 0) return true
+    return whitelist.includes(userLogin)
+  }, [isOwner, whitelist, userLogin])
+
+  if (userLogin && !hasAccess) {
+    return <AccessDenied username={userLogin} />
+  }
 
   const filteredMemos = useMemo(() => {
     if (!memos) return []
@@ -88,6 +107,10 @@ function App() {
     }
   }
 
+  const handleUpdateWhitelist = (newWhitelist: string[]) => {
+    setWhitelist(newWhitelist)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="bottom-right" richColors />
@@ -95,35 +118,95 @@ function App() {
       <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {filteredMemos.length === 0 ? (
-          <EmptyState 
-            onCreateMemo={handleCreateMemo} 
-            isSearching={searchQuery.length > 0}
-          />
+        {isOwner ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="memos" className="gap-2">
+                <Note size={18} />
+                Memos
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="gap-2">
+                <Gear size={18} />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="memos" className="mt-0">
+              {filteredMemos.length === 0 ? (
+                <EmptyState 
+                  onCreateMemo={handleCreateMemo} 
+                  isSearching={searchQuery.length > 0}
+                />
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-xl font-semibold text-foreground">
+                        Your Memos
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {filteredMemos.length} {filteredMemos.length === 1 ? 'memo' : 'memos'}
+                        {searchQuery && ' found'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredMemos.map(memo => (
+                      <MemoCard
+                        key={memo.id}
+                        memo={memo}
+                        onEdit={handleEditMemo}
+                        onDelete={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="settings" className="mt-0">
+              <div className="max-w-2xl">
+                <WhitelistSettings 
+                  whitelist={whitelist || []} 
+                  onUpdateWhitelist={handleUpdateWhitelist}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
         ) : (
           <>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  Your Memos
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {filteredMemos.length} {filteredMemos.length === 1 ? 'memo' : 'memos'}
-                  {searchQuery && ' found'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMemos.map(memo => (
-                <MemoCard
-                  key={memo.id}
-                  memo={memo}
-                  onEdit={handleEditMemo}
-                  onDelete={handleDeleteClick}
-                />
-              ))}
-            </div>
+            {filteredMemos.length === 0 ? (
+              <EmptyState 
+                onCreateMemo={handleCreateMemo} 
+                isSearching={searchQuery.length > 0}
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Your Memos
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {filteredMemos.length} {filteredMemos.length === 1 ? 'memo' : 'memos'}
+                      {searchQuery && ' found'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredMemos.map(memo => (
+                    <MemoCard
+                      key={memo.id}
+                      memo={memo}
+                      onEdit={handleEditMemo}
+                      onDelete={handleDeleteClick}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
       </main>
