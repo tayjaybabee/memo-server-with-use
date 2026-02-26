@@ -43,18 +43,6 @@ function App() {
     return whitelist.includes(userLogin)
   }, [isOwner, whitelist, userLogin])
 
-  if (!userLogin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    )
-  }
-
-  if (!hasAccess) {
-    return <AccessDenied username={userLogin} />
-  }
-
   const filteredMemos = useMemo(() => {
     if (!memos) return []
     if (!searchQuery.trim()) return memos
@@ -66,6 +54,18 @@ function App() {
         memo.content.toLowerCase().includes(query)
     )
   }, [memos, searchQuery])
+
+  if (!userLogin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!hasAccess) {
+    return <AccessDenied username={userLogin} />
+  }
 
   const handleCreateMemo = () => {
     setEditingMemo(null)
