@@ -37,12 +37,21 @@ function App() {
   }, [])
 
   const hasAccess = useMemo(() => {
+    if (!userLogin) return false
     if (isOwner) return true
     if (!whitelist || whitelist.length === 0) return true
     return whitelist.includes(userLogin)
   }, [isOwner, whitelist, userLogin])
 
-  if (userLogin && !hasAccess) {
+  if (!userLogin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!hasAccess) {
     return <AccessDenied username={userLogin} />
   }
 
