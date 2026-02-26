@@ -39,7 +39,7 @@ function App() {
   const hasAccess = useMemo(() => {
     if (!userLogin) return false
     if (isOwner) return true
-    if (!whitelist || whitelist.length === 0) return true
+    if (!whitelist || whitelist.length === 0) return false
     return whitelist.includes(userLogin)
   }, [isOwner, whitelist, userLogin])
 
