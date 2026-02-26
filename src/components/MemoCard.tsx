@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import type { Memo } from '@/types/memo'
 import { motion } from 'framer-motion'
 import { marked } from 'marked'
-import { useMemo } from 'react'
+import { memo as withMemo, useMemo } from 'react'
 
 interface MemoCardProps {
   memo: Memo
@@ -15,21 +15,21 @@ interface MemoCardProps {
   isOwner: boolean
 }
 
-export function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardProps) {
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    } else if (diffInHours < 168) {
-      return date.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    }
+function formatDate(timestamp: number): string {
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+  
+  if (diffInHours < 24) {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  } else if (diffInHours < 168) {
+    return date.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+  } else {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
+}
 
+export const MemoCard = withMemo(function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardProps) {
   const renderPreview = useMemo(() => {
     if (!memo.content) return 'No content'
     
@@ -43,6 +43,8 @@ export function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardP
       return memo.content.slice(0, 200)
     }
   }, [memo.content])
+
+  const formattedDate = useMemo(() => formatDate(memo.updatedAt), [memo.updatedAt])
 
   return (
     <motion.div
@@ -93,7 +95,7 @@ export function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardP
         
         <div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">
           <span className="text-xs text-muted-foreground font-medium">
-            {formatDate(memo.updatedAt)}
+            {formattedDate}
           </span>
           <div className="flex items-center gap-2">
             {memo.sharedWith && memo.sharedWith.length > 0 && (
@@ -110,4 +112,4 @@ export function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardP
       </Card>
     </motion.div>
   )
-}
+})
