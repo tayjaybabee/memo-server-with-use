@@ -3,6 +3,7 @@ import { useKV } from '@github/spark/hooks'
 import { Header } from '@/components/Header'
 import { MemoCard } from '@/components/MemoCard'
 import { MemoDialog } from '@/components/MemoDialog'
+import { ShareMemoDialog } from '@/components/ShareMemoDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { AccessDenied } from '@/components/AccessDenied'
 import { WhitelistSettings } from '@/components/WhitelistSettings'
@@ -20,6 +21,8 @@ function App() {
   const [editingMemo, setEditingMemo] = useState<Memo | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [memoToDelete, setMemoToDelete] = useState<string | null>(null)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [memoToShare, setMemoToShare] = useState<Memo | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [userId, setUserId] = useState<string>('')
   const [userLogin, setUserLogin] = useState<string>('')
@@ -45,15 +48,22 @@ function App() {
 
   const filteredMemos = useMemo(() => {
     if (!memos) return []
-    if (!searchQuery.trim()) return memos
+    
+    const accessibleMemos = memos.filter(memo => {
+      if (memo.userId === userId) return true
+      if (memo.sharedWith && memo.sharedWith.includes(userLogin)) return true
+      return false
+    })
+
+    if (!searchQuery.trim()) return accessibleMemos
 
     const query = searchQuery.toLowerCase()
-    return memos.filter(
+    return accessibleMemos.filter(
       memo =>
         memo.title.toLowerCase().includes(query) ||
         memo.content.toLowerCase().includes(query)
     )
-  }, [memos, searchQuery])
+  }, [memos, searchQuery, userId, userLogin])
 
   if (!userLogin) {
     return (
@@ -116,6 +126,22 @@ function App() {
     }
   }
 
+  const handleShareClick = (memo: Memo) => {
+    setMemoToShare(memo)
+    setShareDialogOpen(true)
+  }
+
+  const handleShareMemo = (memoId: string, sharedWith: string[]) => {
+    setMemos((currentMemos) =>
+      (currentMemos || []).map(memo =>
+        memo.id === memoId
+          ? { ...memo, sharedWith, updatedAt: Date.now() }
+          : memo
+      )
+    )
+    toast.success('Memo sharing updated successfully')
+  }
+
   const handleUpdateWhitelist = (newWhitelist: string[]) => {
     setWhitelist(newWhitelist)
   }
@@ -167,6 +193,8 @@ function App() {
                         memo={memo}
                         onEdit={handleEditMemo}
                         onDelete={handleDeleteClick}
+                        onShare={handleShareClick}
+                        isOwner={memo.userId === userId}
                       />
                     ))}
                   </div>
@@ -211,6 +239,8 @@ function App() {
                       memo={memo}
                       onEdit={handleEditMemo}
                       onDelete={handleDeleteClick}
+                      onShare={handleShareClick}
+                      isOwner={memo.userId === userId}
                     />
                   ))}
                 </div>
@@ -233,6 +263,13 @@ function App() {
         onOpenChange={setDialogOpen}
         onSave={handleSaveMemo}
         editingMemo={editingMemo}
+      />
+
+      <ShareMemoDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        memo={memoToShare}
+        onShare={handleShareMemo}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

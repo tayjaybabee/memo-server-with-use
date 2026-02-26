@@ -5,6 +5,7 @@ export interface Memo {
   createdAt: number
   updatedAt: number
   userId: string
+  sharedWith?: string[]
 }
 
 export interface MemoFormData {

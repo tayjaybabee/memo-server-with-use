@@ -1,6 +1,7 @@
-import { PencilSimple, Trash } from '@phosphor-icons/react'
+import { PencilSimple, Trash, ShareNetwork } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { Memo } from '@/types/memo'
 import { motion } from 'framer-motion'
 
@@ -8,9 +9,11 @@ interface MemoCardProps {
   memo: Memo
   onEdit: (memo: Memo) => void
   onDelete: (id: string) => void
+  onShare: (memo: Memo) => void
+  isOwner: boolean
 }
 
-export function MemoCard({ memo, onEdit, onDelete }: MemoCardProps) {
+export function MemoCard({ memo, onEdit, onDelete, onShare, isOwner }: MemoCardProps) {
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -38,6 +41,17 @@ export function MemoCard({ memo, onEdit, onDelete }: MemoCardProps) {
             {memo.title}
           </h3>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-accent"
+                onClick={() => onShare(memo)}
+                title="Share memo"
+              >
+                <ShareNetwork />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -61,13 +75,21 @@ export function MemoCard({ memo, onEdit, onDelete }: MemoCardProps) {
           {memo.content || 'No content'}
         </p>
         
-        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">
           <span className="text-xs text-muted-foreground font-medium">
             {formatDate(memo.updatedAt)}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {memo.content.length} chars
-          </span>
+          <div className="flex items-center gap-2">
+            {memo.sharedWith && memo.sharedWith.length > 0 && (
+              <Badge variant="secondary" className="text-xs gap-1">
+                <ShareNetwork size={12} />
+                {memo.sharedWith.length}
+              </Badge>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {memo.content.length} chars
+            </span>
+          </div>
         </div>
       </Card>
     </motion.div>

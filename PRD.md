@@ -47,6 +47,13 @@ This is a memo management system with user authentication, CRUD operations, and 
 - **Progression**: Click edit → Dialog opens with current content → Modify fields → Save → Memo updates → Toast confirmation
 - **Success criteria**: Changes persist and display immediately without page refresh
 
+### Memo Sharing
+- **Functionality**: Share individual memos with specific GitHub users
+- **Purpose**: Enable collaboration by granting access to specific memos without full whitelist access
+- **Trigger**: Click share icon on memo card (owner only)
+- **Progression**: Click share → Dialog opens → Enter GitHub username → Add to share list → Save → Memo accessible to shared users → Toast confirmation
+- **Success criteria**: Shared users can view the memo in their memo list; users can be added/removed from share list; badge shows share count
+
 ### Memo Deletion
 - **Functionality**: Remove unwanted memos permanently
 - **Purpose**: Keep memo list relevant and uncluttered
@@ -70,6 +77,10 @@ This is a memo management system with user authentication, CRUD operations, and 
 - **Access Denied**: Non-whitelisted users see a clear, friendly access denied screen with owner contact suggestion
 - **Empty Whitelist**: When no users are whitelisted, anyone can access the memo server (open access mode)
 - **Owner Always Has Access**: App owner bypasses whitelist restrictions and can always access all features
+- **Shared Memo Access**: Users can view memos shared with them even if not on the whitelist
+- **Share with Non-existent Users**: System allows sharing with any GitHub username (validation happens on access)
+- **Duplicate Share Entries**: Prevent adding the same user to share list multiple times
+- **Viewing Shared Memos**: Users only see share button on memos they own; shared memos appear without edit controls for recipients
 
 ## Design Direction
 The design should evoke a sense of modern productivity - clean, focused, and slightly playful. It should feel like a premium note-taking tool with personality, not a sterile database interface. The aesthetic should be warm and inviting while maintaining professional clarity.
@@ -112,14 +123,14 @@ Animations should feel responsive and snappy while adding moments of delight dur
 ## Component Selection
 
 - **Components**:
-  - **Dialog**: Create and edit memo forms in modal overlay
-  - **Card**: Memo display with hover states and action buttons
-  - **Button**: Primary actions (New Memo), secondary actions (Cancel), and icon buttons (Edit, Delete)
-  - **Input**: Title field in memo forms, search field in header, username input in whitelist settings
+  - **Dialog**: Create and edit memo forms in modal overlay, share memo dialog for user management
+  - **Card**: Memo display with hover states and action buttons (edit, delete, share)
+  - **Button**: Primary actions (New Memo), secondary actions (Cancel), and icon buttons (Edit, Delete, Share)
+  - **Input**: Title field in memo forms, search field in header, username input in whitelist and sharing settings
   - **Textarea**: Multi-line content field in memo forms
   - **Avatar**: Display user GitHub avatar in header
   - **Alert Dialog**: Confirmation prompt for memo deletion
-  - **Badge**: Display memo count and whitelist user count
+  - **Badge**: Display memo count, whitelist user count, and share count indicators
   - **ScrollArea**: Smooth scrolling for memo grid on overflow
   - **Tabs**: Switch between Memos view and Settings view (owner only)
 
@@ -139,13 +150,14 @@ Animations should feel responsive and snappy while adding moments of delight dur
   - New Memo: Plus (bold, prominent in floating action style)
   - Edit: PencilSimple (appears on card hover)
   - Delete: Trash (appears on card hover, destructive color)
+  - Share: ShareNetwork (appears on card hover for memo owners, accent color)
   - Search: MagnifyingGlass (inline with search input)
   - User: User or UserCircle (fallback if no avatar)
   - Empty State: Note or NotePencil (large, muted)
   - Settings: Gear (tab navigation)
   - Memos Tab: Note (tab navigation)
   - Access Denied: Lock (large, duotone weight)
-  - Whitelist: UserPlus (settings section header)
+  - Whitelist: UserPlus (settings section header, sharing dialog)
 
 - **Spacing**:
   - Container padding: px-6 py-8
